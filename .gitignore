@@ -1,0 +1,29 @@
+# Python bytecode & cache (فایل‌های کامپایل شده پایتون)
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual Environments (محیط‌های مجازی)
+venv/
+.venv/
+env/
+ENV/
+
+# Django Database & Media (دیتابیس لوکال و فایل‌های آپلودی)
+db.sqlite3
+db.sqlite3-journal
+media/
+
+# Environment Variables (فایل اطلاعات حساس و کلیدها)
+.env
+.env.*
+
+# IDEs & Editors (تنظیمات محیط توسعه مانند اینتلیجی و VS Code)
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS System Files (فایل‌های موقت سیستم‌عامل)
+.DS_Store
+Thumbs.db
