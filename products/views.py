@@ -4,6 +4,7 @@ from rest_framework import viewsets , filters
 from .models import Product,Category
 from django_filters.rest_framework import DjangoFilterBackend , FilterSet , NumberFilter
 from .serializer import CategorySerializer,ProductSerializer
+from .permissions import IsAdminOrReadOnly
 # Create your views here.
 class ProductFilter(FilterSet):
     min_price = NumberFilter(field_name='price',lookup_expr='gte')
@@ -17,6 +18,7 @@ class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
 class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
+    permission_classes = [IsAdminOrReadOnly]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
 
     # اتصال کلاس فیلتر سفارشی
