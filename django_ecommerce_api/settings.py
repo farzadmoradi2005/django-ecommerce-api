@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'django_filters',
     'products',
     'accounts',
+    'carts',
 ]
 REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
