@@ -2,6 +2,8 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+
+from products.models import Product
 from .models import Cart, CartItem
 from .serializers import CartSerializer, CartItemSerializer
 from django.db import transaction
@@ -14,7 +16,6 @@ class CartViewSet(viewsets.ModelViewSet):
         return Cart.objects.filter(user=self.request.user)
 
     def get_object(self):
-        # دریافت سبد خرید کاربر یا ساخت آن در صورت عدم وجود (Lazy Initialization)
         cart, _ = Cart.objects.get_or_create(user=self.request.user)
         return cart
 
@@ -26,27 +27,36 @@ class CartViewSet(viewsets.ModelViewSet):
         if not cart_items.exists():
             return Response({'error': 'سبد خرید شما خالی است.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # استفاده از تراکنش برای تضمین اجرای یکپارچه تمامی مراحل
         with transaction.atomic():
-            # ۱. ساخت رکورد اصلی سفارش
+            product_ids = [item.product_id for item in cart_items]
+            products = Product.objects.filter(id__in=product_ids).select_for_update()
+            product_dict = {p.id: p for p in products}
+
+            order_items_to_create = []
             order = Order.objects.create(user=request.user)
 
-            # ۲. کپی کردن آیتم‌های سبد خرید به آیتم‌های سفارش
-            order_items_to_create = []
             for item in cart_items:
+                product = product_dict.get(item.product_id)
+                if product.inventory < item.quantity:
+                    return Response(
+                        {'error': f'موجودی محصول {product.name} کافی نیست. موجودی فعلی: {product.inventory}'},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+
+                product.inventory -= item.quantity
+                product.save()
+
                 order_items_to_create.append(
                     OrderItem(
                         order=order,
-                        product=item.product,
+                        product=product,
                         quantity=item.quantity,
-                        price=item.product.price  # کپی قیمت فعلی محصول
+                        price=product.price
                     )
                 )
 
-            # ذخیره گروهی برای بهینه‌سازی کوئری‌های دیتابیس (Bulk Insert)
             OrderItem.objects.bulk_create(order_items_to_create)
 
-            # ۳. پاک کردن سبد خرید پس از انتقال موفق اطلاعات
             cart_items.delete()
 
         return Response(
